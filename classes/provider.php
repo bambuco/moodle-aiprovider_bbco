@@ -45,21 +45,8 @@ class provider extends \core_ai\provider {
      * @return bool Return true if configured.
      */
     public function is_provider_configured(): bool {
-        try {
-            $manager = \core\di::get(\core_ai\manager::class);
-
-            // Check that at least one real provider is configured and supports generate_text
-            foreach ($manager->get_sorted_providers() as $provider) {
-                if ($provider->get_name() !== 'aiprovider_bbco'
-                    && $provider->is_provider_configured()
-                    && in_array(\core_ai\aiactions\generate_text::class, $provider->get_action_list())) {
-                    return true;
-                }
-            }
-            return false;
-        } catch (\Throwable $e) {
-            return false;
-        }
+        $provider = self::get_available_provider();
+        return !empty($provider);
     }
 
     /**
@@ -72,14 +59,17 @@ class provider extends \core_ai\provider {
             $manager = \core\di::get(\core_ai\manager::class);
 
             foreach ($manager->get_sorted_providers() as $provider) {
-                if ($provider->get_name() !== 'aiprovider_bbco'
+                if (
+                    $provider->get_name() !== 'aiprovider_bbco'
                     && $provider->is_provider_configured()
-                    && in_array(\core_ai\aiactions\generate_text::class, $provider->get_action_list())) {
+                    && in_array(\core_ai\aiactions\generate_text::class, $provider->get_action_list())
+                ) {
                     return $provider;
                 }
             }
         } catch (\Throwable $e) {
-            // Log or handle exception if needed
+            // ToDo: Log or handle exception if needed.
+            return null;
         }
 
         return null;
@@ -94,9 +84,9 @@ class provider extends \core_ai\provider {
      * @return array|bool
      */
     public function is_request_allowed(\core_ai\aiactions\base $action): array|bool {
-        $realProvider = self::get_available_provider();
-        if ($realProvider !== null) {
-            return $realProvider->is_request_allowed($action);
+        $realprovider = self::get_available_provider();
+        if ($realprovider !== null) {
+            return $realprovider->is_request_allowed($action);
         }
         return false;
     }

@@ -42,18 +42,18 @@ class process_generate_text extends \core_ai\process_base {
      * @return array The response from the AI service.
      */
     protected function query_ai_api(): array {
-        // Get the configured real provider
+        // Get the configured real provider.
         $realprovider = \aiprovider_bbco\provider::get_real_provider();
         if ($realprovider === null) {
             return [
                 'success' => false,
                 'errorcode' => 500,
-                'error' => 'No AI provider configured',
-                'errormessage' => get_string('error_no_provider', 'aiprovider_bbco'),
+                'error' => get_string('error_no_provider', 'aiprovider_bbco'),
+                'errormessage' => get_string('error_no_provider_desc', 'aiprovider_bbco'),
             ];
         }
 
-        // Get the processor for the real provider
+        // Get the processor for the real provider.
         try {
             $classname = 'process_generate_text';
             $classpath = substr($realprovider::class, 0, strpos($realprovider::class, '\\') + 1);
@@ -63,12 +63,12 @@ class process_generate_text extends \core_ai\process_base {
                 return [
                     'success' => false,
                     'errorcode' => 500,
-                    'error' => 'Processor not found for action',
-                    'errormessage' => get_string('error_processor_not_found', 'aiprovider_bbco'),
+                    'error' => get_string('error_processornotfound', 'aiprovider_bbco'),
+                    'errormessage' => get_string('error_processornotfound_desc', 'aiprovider_bbco'),
                 ];
             }
 
-            // Create the processor and process the action
+            // Create the processor and process the action.
             $action = $this->action->get_generate_text_action();
 
             $processor = new process_openai($realprovider, $action);
@@ -76,12 +76,11 @@ class process_generate_text extends \core_ai\process_base {
             $response = $processor->query_ai_api();
 
             return $response;
-
         } catch (\Throwable $e) {
             return [
                 'success' => false,
                 'errorcode' => 500,
-                'error' => 'Error processing request in real provider',
+                'error' => get_string('error_processingrequest', 'aiprovider_bbco'),
                 'errormessage' => $e->getMessage(),
             ];
         }

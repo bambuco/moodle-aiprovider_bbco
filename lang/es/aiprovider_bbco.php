@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * English language pack for BbCo AI provider is not an real provider but a way to interact with existing suppliers.
+ * Strings for component 'aiprovider_bbco', language 'es'
  *
  * @package    aiprovider_bbco
  * @category   string
@@ -25,10 +25,10 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['error_no_provider'] = 'No AI provider configured';
-$string['error_no_provider_desc'] = 'No AI provider is configured. Please configure at least one real AI provider (OpenAI, Azure AI, Ollama, etc.).';
-$string['error_processingrequest'] = 'Error processing request in real provider';
-$string['error_processornotfound'] = 'Processor not found for action';
-$string['error_processornotfound_desc'] = 'The processor for the requested action was not found in the configured AI provider.';
-$string['pluginname'] = 'BbCo AI proxy provider.';
-$string['privacy:metadata'] = 'The BbCo AI provider is not a real provider but a way to interact with existing suppliers plugin doesn\'t store any personal data.';
+$string['error_no_provider'] = 'No hay un proveedor de IA configurado';
+$string['error_no_provider_desc'] = 'No hay un proveedor de IA configurado. Por favor, configure al menos un proveedor de IA real (OpenAI, Azure AI, Ollama, etc.).';
+$string['error_processingrequest'] = 'Error al procesar la solicitud en el proveedor real';
+$string['error_processornotfound'] = 'Procesador no encontrado para la acción';
+$string['error_processornotfound_desc'] = 'El procesador para la acción solicitada no se encontró en el proveedor de IA configurado.';
+$string['pluginname'] = 'Proveedor proxy de IA de BbCo';
+$string['privacy:metadata'] = 'El proveedor de inteligencia artificial de BbCo no es un proveedor real, sino una forma de interactuar con proveedores existentes. El complemento no almacena ningún dato personal.';
