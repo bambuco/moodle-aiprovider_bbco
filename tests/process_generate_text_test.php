@@ -75,30 +75,54 @@ final class process_generate_text_test extends \advanced_testcase {
     }
 
     /**
-     * Test instruction composition for free prompt mode.
+     * A request instruction replaces generate_text configuration without changing the provider or user prompt.
      */
-    public function test_compose_prompt_with_instruction(): void {
-        $processor = new process_generate_text($this->provider, $this->action);
+    public function test_system_instruction_is_request_local(): void {
+        $actionclass = \core_ai\aiactions\generate_text::class;
+        $actionconfig = [
+            $actionclass => [
+                'enabled' => true,
+                'settings' => ['systeminstruction' => 'Global generate_text instruction'],
+            ],
+        ];
+        $realprovider = new \aiprovider_bbcotest\counting_provider(
+            true,
+            'real',
+            '[]',
+            json_encode($actionconfig),
+            101
+        );
+        $broker = new class (true, 'broker', '[]', id: 102) extends provider {
+            /** @var \core_ai\provider[] Providers returned to the processor. */
+            public array $realproviders = [];
 
-        $method = new \ReflectionMethod($processor, 'compose_prompt_with_instruction');
-        $result = $method->invoke($processor, 'Follow these rules', 'Answer my question');
+            /**
+             * Return the configured fixtures.
+             *
+             * @return \core_ai\provider[]
+             */
+            public function get_real_providers(): array {
+                return $this->realproviders;
+            }
+        };
+        $broker->realproviders = [$realprovider];
+        \aiprovider_bbcotest\process_generate_text::$lastactionconfig = null;
+        \aiprovider_bbcotest\process_generate_text::$lastprompttext = null;
 
-        $this->assertStringContainsString('<SYSTEM_INSTRUCTION_START>', $result);
-        $this->assertStringContainsString('Follow these rules', $result);
-        $this->assertStringContainsString('<USER_PROMPT_START>', $result);
-        $this->assertStringContainsString('Answer my question', $result);
-    }
+        $processor = new process_generate_text($broker, $this->action);
+        $processor->set_system_instruction('Parce request instruction');
+        $result = $processor->process();
 
-    /**
-     * Test prompt mutation on delegated action.
-     */
-    public function test_set_action_prompt_text(): void {
-        $processor = new process_generate_text($this->provider, $this->action);
-
-        $method = new \ReflectionMethod($processor, 'set_action_prompt_text');
-        $method->invoke($processor, $this->action, 'Mutated prompt');
-
-        $this->assertSame('Mutated prompt', $this->action->get_configuration('prompttext'));
+        $this->assertTrue($result->get_success());
+        $this->assertSame(
+            'Parce request instruction',
+            \aiprovider_bbcotest\process_generate_text::$lastactionconfig[$actionclass]['settings']['systeminstruction']
+        );
+        $this->assertSame('User prompt body', \aiprovider_bbcotest\process_generate_text::$lastprompttext);
+        $this->assertSame(
+            'Global generate_text instruction',
+            $realprovider->actionconfig[$actionclass]['settings']['systeminstruction']
+        );
     }
 
     /**

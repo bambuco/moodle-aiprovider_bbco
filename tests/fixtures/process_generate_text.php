@@ -24,12 +24,20 @@ namespace aiprovider_bbcotest;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class process_generate_text extends \core_ai\process_base {
+    /** @var array|null Action configuration received by the last fixture call. */
+    public static ?array $lastactionconfig = null;
+
+    /** @var string|null User prompt received by the last fixture call. */
+    public static ?string $lastprompttext = null;
+
     /**
      * Return the configured test result.
      *
      * @return array
      */
     protected function query_ai_api(): array {
+        self::$lastactionconfig = $this->provider->actionconfig;
+        self::$lastprompttext = $this->action->get_configuration('prompttext');
         return $this->provider->result;
     }
 }

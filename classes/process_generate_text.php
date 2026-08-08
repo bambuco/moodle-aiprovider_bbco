@@ -26,18 +26,24 @@ namespace aiprovider_bbco;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class process_generate_text extends \core_ai\process_base {
-    /**
-     * The prompt to send to the AI service, extracted from the action parameters.
-     *
-     * @var string
-     */
-    public $prompt = '';
+    /** @var string|null Request-specific system instruction, or null to preserve provider configuration. */
+    private ?string $systeminstruction = null;
 
     /** @var array|null Identity of the provider used by the last attempt. */
     private ?array $effectiveprovider = null;
 
     /** @var array[] Closed provider attempts from the last process call. */
     private array $attempts = [];
+
+    /**
+     * Replace the effective provider's generate_text system instruction for this request only.
+     *
+     * @param string $systeminstruction Request-specific system instruction
+     * @return void
+     */
+    public function set_system_instruction(string $systeminstruction): void {
+        $this->systeminstruction = $systeminstruction;
+    }
 
     /**
      * Return the effective provider instance used by the last attempt.
@@ -186,14 +192,10 @@ class process_generate_text extends \core_ai\process_base {
                 ];
             }
 
-            // Every attempt gets a fresh action so prompt decoration cannot accumulate across fallbacks.
+            // Every attempt gets a fresh action and provider configuration.
             $action = clone $this->prepare_delegated_action();
-            if ($this->prompt !== '') {
-                $userprompt = (string)$action->get_configuration('prompttext');
-                $this->set_action_prompt_text($action, $this->compose_prompt_with_instruction($this->prompt, $userprompt));
-            }
-
-            $processor = new $processclass($realprovider, $action);
+            $requestprovider = $this->prepare_request_provider($realprovider, $action);
+            $processor = new $processclass($requestprovider, $action);
             $response = $processor->process();
 
             return $this->response_to_array($response);
@@ -240,19 +242,23 @@ class process_generate_text extends \core_ai\process_base {
     }
 
     /**
-     * Compose an instruction-aware free prompt for providers without runtime system instruction override.
+     * Prepare request-local provider configuration without mutating the configured instance.
      *
-     * @param string $instruction
-     * @param string $userprompt
-     * @return string
+     * @param \core_ai\provider $realprovider Effective provider
+     * @param \core_ai\aiactions\base $action Delegated generate_text action
+     * @return \core_ai\provider
      */
-    private function compose_prompt_with_instruction(string $instruction, string $userprompt): string {
-        return "<SYSTEM_INSTRUCTION_START>\n"
-            . trim($instruction)
-            . "\n<SYSTEM_INSTRUCTION_END>\n"
-            . "<USER_PROMPT_START>\n"
-            . $userprompt
-            . "\n<USER_PROMPT_END>";
+    private function prepare_request_provider(
+        \core_ai\provider $realprovider,
+        \core_ai\aiactions\base $action
+    ): \core_ai\provider {
+        if ($this->systeminstruction === null) {
+            return $realprovider;
+        }
+
+        $actionconfig = $realprovider->actionconfig;
+        $actionconfig[$action::class]['settings']['systeminstruction'] = $this->systeminstruction;
+        return $realprovider->with(actionconfig: $actionconfig);
     }
 
     /**
@@ -273,26 +279,6 @@ class process_generate_text extends \core_ai\process_base {
         }
 
         return !array_key_exists('recoverable', $failure) || $failure['recoverable'] === true;
-    }
-
-    /**
-     * Mutate prompttext in a generate_text-compatible action.
-     *
-     * @param \core_ai\aiactions\base $action
-     * @param string $prompttext
-     * @return void
-     */
-    private function set_action_prompt_text(\core_ai\aiactions\base $action, string $prompttext): void {
-        $reflection = new \ReflectionClass($action);
-        while ($reflection !== false) {
-            if ($reflection->hasProperty('prompttext')) {
-                $property = $reflection->getProperty('prompttext');
-                $property->setAccessible(true);
-                $property->setValue($action, $prompttext);
-                return;
-            }
-            $reflection = $reflection->getParentClass();
-        }
     }
 
     /**

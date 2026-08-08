@@ -11,8 +11,9 @@ The BbCo AI provider is not a real AI provider by itself. Instead, it acts as a 
 3. **Orders** instances using the broker preference and priority configuration
 4. **Delegates** a fresh cloned action to each selected provider
 5. **Falls back** only after recoverable 5xx responses
+6. **Overrides** the effective `generate_text` system instruction for callers that provide a request-specific instruction
 
-Client errors, including 429, and processor exceptions are terminal. The broker applies its own Moodle AI rate limit; the effective provider applies its limit when delegated. BBCO does not guarantee a provider-native system role. Any optional broker instruction is represented using explicit text markers.
+Client errors, including 429, and processor exceptions are terminal. The broker applies its own Moodle AI rate limit; the effective provider applies its limit when delegated. Request-specific instructions replace the effective provider's configured `generate_text` system instruction on a request-local provider copy; the configured provider instance is never mutated.
 
 ## Requirements
 
@@ -21,7 +22,7 @@ Client errors, including 429, and processor exceptions are terminal. The broker 
 
 ## Deployment with local_parce
 
-For the matching `2026080200` development pair, install and configure BBCO before installing `local_parce`. Configure at least one real provider with the `generate_text` action enabled.
+For the matching `2026080800` development pair, install and configure BBCO before installing `local_parce`. Configure at least one real provider with the `generate_text` action enabled.
 
 ## Installation
 
