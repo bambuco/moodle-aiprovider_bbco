@@ -14,33 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace aiprovider_bbco;
+namespace aiprovider_bbcotest;
 
 /**
- * Class process_openai
+ * Generate-text processor fixture returning its provider's configured result.
  *
  * @package    aiprovider_bbco
  * @copyright  2026 David Herney @ BambuCo
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class process_openai extends \aiprovider_openai\process_generate_text {
+class process_generate_text extends \core_ai\process_base {
     /**
-     * The prompt to send to the IA. It should be set before calling the process method.
-     * It is public so it can be set from the outside, but it is not defined in the constructor
-     * because the main class does not know about it and it is specific to this implementation.
+     * Return the configured test result.
      *
-     * @var string
+     * @return array
      */
-    public $prompt = '';
-
-    /**
-     * Get the system instruction for the IA.
-     * In this case, it returns the prompt that should be set before calling the process method.
-     *
-     * @return string The system instruction.
-     */
-    #[\Override]
-    protected function get_system_instruction(): string {
-        return $this->prompt;
+    protected function query_ai_api(): array {
+        return $this->provider->result;
     }
 }

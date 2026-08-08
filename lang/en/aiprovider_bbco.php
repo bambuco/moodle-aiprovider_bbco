@@ -27,8 +27,10 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['error_no_provider'] = 'No AI provider configured';
 $string['error_no_provider_desc'] = 'No AI provider is configured. Please configure at least one real AI provider (OpenAI, Azure AI, Ollama, etc.).';
+$string['error_invalidbroker'] = 'Invalid broker provider instance received by BbCo processor.';
 $string['error_processingrequest'] = 'Error processing request in real provider';
+$string['error_processingrequest_desc'] = 'The AI request could not be completed by any configured provider.';
 $string['error_processornotfound'] = 'Processor not found for action';
-$string['error_processornotfound_desc'] = 'The processor for the requested action was not found in the configured AI provider.';
+$string['error_processornotfound_desc'] = 'The generate_text processor was not found in provider {$a}.';
 $string['pluginname'] = 'BbCo AI proxy provider.';
 $string['privacy:metadata'] = 'The BbCo AI provider is not a real provider but a way to interact with existing suppliers plugin doesn\'t store any personal data.';

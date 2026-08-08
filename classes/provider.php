@@ -45,50 +45,67 @@ class provider extends \core_ai\provider {
      * @return bool Return true if configured.
      */
     public function is_provider_configured(): bool {
-        $provider = self::get_available_provider();
-        return !empty($provider);
+        return !empty($this->get_real_providers());
     }
 
     /**
-     * Get the first available real provider that is configured and supports generate_text.
+     * Get all available real providers that are configured and support generate_text.
      *
-     * @return \core_ai\provider|null The configured provider or null if none available.
+     * Providers are ordered by:
+     * 1) preferredprovider config key
+     * 2) providerpriority config key (comma-separated)
+     * 3) core_ai provider order
+     *
+     * @return \core_ai\provider[] Ordered list of configured real providers.
      */
-    protected static function get_available_provider(): ?\core_ai\provider {
+    public function get_real_providers(): array {
+        $eligibleproviders = [];
         try {
             $manager = \core\di::get(\core_ai\manager::class);
 
             foreach ($manager->get_sorted_providers() as $provider) {
                 if (
                     $provider->get_name() !== 'aiprovider_bbco'
+                    && $provider->enabled
                     && $provider->is_provider_configured()
+                    && $manager->is_action_enabled(
+                        $provider->provider,
+                        \core_ai\aiactions\generate_text::class,
+                        $provider->id ?? 0,
+                    )
                     && in_array(\core_ai\aiactions\generate_text::class, $provider->get_action_list())
                 ) {
-                    return $provider;
+                    $eligibleproviders[] = $provider;
                 }
             }
         } catch (\Throwable $e) {
-            // ToDo: Log or handle exception if needed.
-            return null;
+            debugging('aiprovider_bbco: failed while discovering providers: ' . $e->getMessage(), DEBUG_DEVELOPER);
+            return [];
         }
 
-        return null;
-    }
-
-    /**
-     * Is request allowed
-     *
-     * Delegates to the configured provider.
-     *
-     * @param \core_ai\aiactions\base $action
-     * @return array|bool
-     */
-    public function is_request_allowed(\core_ai\aiactions\base $action): array|bool {
-        $realprovider = self::get_available_provider();
-        if ($realprovider !== null) {
-            return $realprovider->is_request_allowed($action);
+        if (empty($eligibleproviders)) {
+            return [];
         }
-        return false;
+
+        $ordered = [];
+        $selectedids = [];
+        foreach ($this->get_selection_preferences() as $providername) {
+            foreach ($eligibleproviders as $provider) {
+                if ($provider->get_name() === $providername && !isset($selectedids[$provider->id])) {
+                    $ordered[] = $provider;
+                    $selectedids[$provider->id] = true;
+                }
+            }
+        }
+
+        // Append any provider not explicitly listed in selection preferences.
+        foreach ($eligibleproviders as $provider) {
+            if (!isset($selectedids[$provider->id])) {
+                $ordered[] = $provider;
+            }
+        }
+
+        return $ordered;
     }
 
     /**
@@ -96,7 +113,60 @@ class provider extends \core_ai\provider {
      *
      * @return \core_ai\provider|null The configured provider or null if none available.
      */
-    public static function get_real_provider(): ?\core_ai\provider {
-        return self::get_available_provider();
+    public function get_real_provider(): ?\core_ai\provider {
+        $providers = $this->get_real_providers();
+        $provider = reset($providers);
+        return $provider === false ? null : $provider;
+    }
+
+    /**
+     * Build provider selection preferences from instance config.
+     *
+     * Supported config keys:
+     * - preferredprovider: aiprovider_openai or aiprovider_openai\provider
+     * - providerpriority: comma-separated provider list
+     *
+     * @return string[]
+     */
+    private function get_selection_preferences(): array {
+        $selection = [];
+
+        if (!empty($this->config['preferredprovider'])) {
+            $preferred = $this->normalise_provider_name((string)$this->config['preferredprovider']);
+            if (!empty($preferred)) {
+                $selection[] = $preferred;
+            }
+        }
+
+        if (!empty($this->config['providerpriority'])) {
+            $prioritylist = explode(',', (string)$this->config['providerpriority']);
+            foreach ($prioritylist as $candidate) {
+                $normalised = $this->normalise_provider_name($candidate);
+                if (!empty($normalised)) {
+                    $selection[] = $normalised;
+                }
+            }
+        }
+
+        return array_values(array_unique($selection));
+    }
+
+    /**
+     * Normalise provider names to component form (aiprovider_xxx).
+     *
+     * @param string $providername
+     * @return string|null
+     */
+    private function normalise_provider_name(string $providername): ?string {
+        $providername = trim($providername);
+        if ($providername === '') {
+            return null;
+        }
+
+        if (str_ends_with($providername, '\\provider')) {
+            return substr($providername, 0, -9);
+        }
+
+        return $providername;
     }
 }
