@@ -27,8 +27,10 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['error_no_provider'] = 'No hay un proveedor de IA configurado';
 $string['error_no_provider_desc'] = 'No hay un proveedor de IA configurado. Por favor, configure al menos un proveedor de IA real (OpenAI, Azure AI, Ollama, etc.).';
+$string['error_invalidbroker'] = 'La instancia de proveedor broker recibida por el procesador de BbCo no es valida.';
 $string['error_processingrequest'] = 'Error al procesar la solicitud en el proveedor real';
+$string['error_processingrequest_desc'] = 'Ningun proveedor configurado pudo completar la solicitud de IA.';
 $string['error_processornotfound'] = 'Procesador no encontrado para la acción';
-$string['error_processornotfound_desc'] = 'El procesador para la acción solicitada no se encontró en el proveedor de IA configurado.';
+$string['error_processornotfound_desc'] = 'No se encontro el procesador generate_text en el proveedor {$a}.';
 $string['pluginname'] = 'Proveedor proxy de IA de BbCo';
 $string['privacy:metadata'] = 'El proveedor de inteligencia artificial de BbCo no es un proveedor real, sino una forma de interactuar con proveedores existentes. El complemento no almacena ningún dato personal.';
